@@ -2,9 +2,10 @@
 # создание файла базы данных с именем файла базы данных todo.db
 
 from sqlalchemy import create_engine
+from datetime import datetime, timedelta
+from dateutil import parser
 
 engine = create_engine('sqlite:///todo.db?check_same_thread=False')
-
 
 # .......................задание 2 ............................................
 # Cоздайте таблицу в этой базе данных. Имя таблицы должно быть task.
@@ -23,17 +24,14 @@ Base = declarative_base()
 
 class Table(Base):
     __tablename__ = 'task'  # Имя таблицы должно быть task
-    id = Column(Integer, primary_key=True)  # id - целочисленный столбец таблицы; primary_key=True говорит, что этот столбец является первичным ключом.
+    id = Column(Integer,
+                primary_key=True)  # id - целочисленный столбец таблицы; primary_key=True говорит, что этот столбец является первичным ключом.
     task = Column(String)  # task - это строковый столбец;
-    deadline = Column(Date, default=datetime.today())  # deadline - это столбец, в котором хранится дата. SQLAlchemy автоматически преобразует дату SQL в объект date и времени Python.
+    deadline = Column(Date,
+                      default=datetime.today())  # deadline - это столбец, в котором хранится дата. SQLAlchemy автоматически преобразует дату SQL в объект date и времени Python.
 
     def __repr__(self):
         return self.task
-# .......................задание 3 ............................................
-# Также нужно реализовать меню, которое сделает вашу программу более удобной. В меню должны быть следующие пункты:
-#       1.Today's tasks(Сегодняшние задачи_. Распечатывает все задачи на сегодня.
-#       2.Add task(Добавить задачу). Запрашивает описание задачи и сохраняет его в базе данных.
-#       3.Exit (Выход).
 
 
 # После того, как мы описали нашу таблицу, самое время создать ее в нашей базе данных. Все, что нам нужно, это вызвать метод create_all () и передать ему движок:
@@ -56,7 +54,7 @@ session = Session()
 rows = session.query(Table).all()  # Метод all () возвращает все строки из таблицы в виде списка Python.
 
 # Вы можете получить доступ к полям строк по их именам:
-#if len(rows) > 0:
+# if len(rows) > 0:
 #    first_row = rows[0]  # Если список строк не пустой
 
 
@@ -65,25 +63,57 @@ rows = session.query(Table).all()  # Метод all () возвращает вс
 # print(first_row)  # Распечатает строку, возвращенную методом __repr__, a именно task
 
 status = True
-while status:
-    act = input("\n1) Today's tasks\n2) Add task\n0) Exit\n")
+while status:  # роботает
+    act = input("\n1) Today's tasks\n2) Week's tasks\n3) All tasks\n4) Add task\n0) Exit")
     if act == "0":
         status = False
-        print("Bye!")
-    elif act == "2":
-        add_task =input("Enter task")
+        print("\nBye!")
 
-        new_row = Table(task=add_task, deadline=datetime.now().date())
+    elif act == "3":  # роботает
+        print("\nAll tasks:")
+        for row in rows:
+            print(str(row.id) + ".", str(row) + ".", datetime.strftime(row.deadline,
+                                                                       "%d %b"))  # Распечатает строку, возвращенную методом __repr__, a именно task
+
+    elif act == "4":  # роботает
+        add_task = input("\nEnter task")
+        deadline = input("Enter deadline")  # 2020-04-28
+        new_row = Table(task=add_task, deadline=datetime.strptime(deadline, '%Y-%m-%d'))
         session.add(new_row)
         session.commit()
         print("The task has been added!")
-    elif act == "1":
-        print("Today:")
-        rows = session.query(Table).all()
-        print(len(rows))
-        for row in rows:
-            # Если список строк не пустой
-            print(str(row.id) + ".", row)  # Распечатает строку, возвращенную методом __repr__, a именно task
 
+    elif act == "2":
+        today = datetime.today()
+        day = 0
+        counter = 0
+
+        while counter < 7:
+            today = today + timedelta(days=day)
+            rows = session.query(Table).filter(Table.deadline == today.date()).all()  # вибрать все строки по дате
+            ro = [i for i in range(1, len(rows) + 1)]
+            i = 0
+            print()
+            print(str(datetime.strftime(today, "%A %d %b")) + ":")
+            for row in rows:
+                if len(rows) != 0:
+                    print(str(ro[i]) + ".", row)
+                    i += 1
+            if len(rows) == 0:
+                print("Nothing to do!")
+            day = 1
+            counter += 1
+
+    elif act == "1":
+        date_time = datetime.today().date()  # текущая дата без времени
+        print(date_time.strftime("\nToday " "%d %b" ":"))
+        today = datetime.today()
+        rows = session.query(Table).filter(Table.deadline == today.date()).all()  # вибрать все строки по дате
+        ro = [i for i in range(1, len(rows) + 1)]
+        i = 0
+        for row in rows:
+            if len(rows) != 0:
+                print(str(ro[i]) + ".", row)  # Распечатает строку, возвращенную методом __repr__, a именно task
+                i += 1
         if len(rows) == 0:
             print("Nothing to do!")
