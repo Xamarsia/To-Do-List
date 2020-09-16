@@ -70,10 +70,15 @@ while status:  # роботает
         print("\nBye!")
 
     elif act == "3":  # роботает
+        rows = session.query(Table).order_by(Table.deadline).all()
+        ro = [i for i in range(1, len(rows) + 1)]
+        i = 0
         print("\nAll tasks:")
         for row in rows:
-            print(str(row.id) + ".", str(row) + ".", datetime.strftime(row.deadline,
-                                                                       "%d %b"))  # Распечатает строку, возвращенную методом __repr__, a именно task
+            if len(rows) != 0:
+                print(str(ro[i]) + ".", str(row) + ".", datetime.strftime(row.deadline,
+                                                                          "%d %b"))  # Распечатает строку, возвращенную методом __repr__, a именно task
+                i += 1
 
     elif act == "4":  # роботает
         add_task = input("\nEnter task")
