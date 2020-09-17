@@ -3,17 +3,8 @@
 
 from sqlalchemy import create_engine
 from datetime import datetime, timedelta
-from dateutil import parser
 
 engine = create_engine('sqlite:///todo.db?check_same_thread=False')
-
-# .......................задание 2 ............................................
-# Cоздайте таблицу в этой базе данных. Имя таблицы должно быть task.
-#   В табличной задаче должны быть следующие столбцы:
-#       1.Целочисленный столбец с именем id. Это должен быть первичный ключ.
-#       2.Строковый столбец с именем task.
-#       3.Столбец даты с названием крайний срок. По умолчанию в нем должна быть указана дата создания задачи. Вы можете использовать метод datetime.today ().
-
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Date
@@ -44,27 +35,13 @@ from sqlalchemy.orm import sessionmaker
 Session = sessionmaker(bind=engine)
 session = Session()
 
-# Чтобы создать строку в нашей таблице, вам необходимо создать объект класса модели и передать его методу add ():
-
-# new_row = Table(task='This is string field!', deadline=datetime.strptime('01-24-2020', '%m-%d-%Y').date())
-# session.add(new_row)
-# session.commit()
-
 
 rows = session.query(Table).all()  # Метод all () возвращает все строки из таблицы в виде списка Python.
 
-# Вы можете получить доступ к полям строк по их именам:
-# if len(rows) > 0:
-#    first_row = rows[0]  # Если список строк не пустой
-
-
-# print(first_row.deadline)  # Распечатает значение deadline
-# print(first_row.id)  # Напечатает идентификатор строки.
-# print(first_row)  # Распечатает строку, возвращенную методом __repr__, a именно task
-
 status = True
 while status:  # роботает
-    act = input("\n1) Today's tasks\n2) Week's tasks\n3) All tasks\n4) Add task\n0) Exit")
+    act = input(
+        "\n1) Today's tasks\n2) Week's tasks\n3) All tasks\n4) Missed tasks\n5) Add task\n6) Delete task\n0) Exit")
     if act == "0":
         status = False
         print("\nBye!")
@@ -80,7 +57,44 @@ while status:  # роботает
                                                                           "%d %b"))  # Распечатает строку, возвращенную методом __repr__, a именно task
                 i += 1
 
-    elif act == "4":  # роботает
+    elif act == "4":  # го тово
+        # Когда вы печатаете пропущенное задание, вы не распечатываете их все !.
+        rows = session.query(Table).filter(Table.deadline < datetime.today().date()).all()
+        today = datetime.today().date()
+        ro = [i for i in range(1, len(rows) + 1)]
+        i = 0
+        print("\nMissed tasks:")
+        for row in rows:
+            if row.deadline < today:
+                if len(rows) != 0:
+                    print(str(ro[i]) + ".", str(row) + ".", datetime.strftime(row.deadline,
+                                                                              "%d %b"))  # Распечатает строку, возвращенную методом __repr__, a именно task
+                    i += 1
+        if len(rows) == 0:
+            print("Nothing is missed!")
+
+    elif act == "6":
+        rows = session.query(Table).order_by(Table.deadline).all()
+        ro = [i for i in range(1, len(rows) + 1)]
+        i = 0
+        print("\nChoose the number of the task you want to delete:")
+        for row in rows:
+            if len(rows) != 0:
+                print(str(ro[i]) + ".", str(row) + ".", datetime.strftime(row.deadline,
+                                                                          "%d %b"))  # Распечатает строку, возвращенную методом __repr__, a именно task
+                i += 1
+
+        deleted_task = int(input())
+        print(rows[0])  # sncsdfvufgdtsfdcts выводит одно значение
+        specific_row = rows[deleted_task - 1]  # in case rows is not empty
+        session.delete(specific_row)
+        session.commit()
+
+        print("The task has been deleted!")
+
+        pass
+
+    elif act == "5":  # роботает
         add_task = input("\nEnter task")
         deadline = input("Enter deadline")  # 2020-04-28
         new_row = Table(task=add_task, deadline=datetime.strptime(deadline, '%Y-%m-%d'))
